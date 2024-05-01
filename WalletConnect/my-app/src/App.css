@@ -1,0 +1,72 @@
+/* General body styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #6e6e72;
+  color: #333;
+}
+
+/* Main application container */
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Header styling */
+.App-header {
+  background-color: #282c34;
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 90%;
+  max-width: 600px;
+}
+
+/* Button styling */
+button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+/* Input field styling */
+input[type="number"] {
+  padding: 10px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  width: calc(100% - 24px);
+}
+
+input[type="number"]:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+/* Connected account display */
+div.connected-account {
+  margin-top: 10px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: antiquewhite;
+}
+
+/* Age display styling */
+div.age-display {
+  font-size: 1.2em;
+  margin-top: 15px;
+}
