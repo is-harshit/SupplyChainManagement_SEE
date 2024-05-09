@@ -1,10 +1,10 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/home/harshit/BlockChain/contracts/PeopleProfile.sol": {
-      "lastModificationDate": 1714588921905,
-      "contentHash": "f33b933281151c44c830276f36bdbfad",
-      "sourceName": "contracts/PeopleProfile.sol",
+    "/home/harshit/BlockChain/contracts/SCM.sol": {
+      "lastModificationDate": 1715179576283,
+      "contentHash": "0c730e303fb3e58e469a838af03dd9d2",
+      "sourceName": "contracts/SCM.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
@@ -31,10 +31,46 @@
       },
       "imports": [],
       "versionPragmas": [
-        "^0.8.8"
+        "^0.8.0"
       ],
       "artifacts": [
-        "PeopleProfile"
+        "SupplyChainManagement"
+      ]
+    },
+    "/home/harshit/BlockChain/contracts/Bank.sol": {
+      "lastModificationDate": 1715185917598,
+      "contentHash": "1dffbcd855a0f2220e0a3649103d875f",
+      "sourceName": "contracts/Bank.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Bank"
       ]
     }
   }

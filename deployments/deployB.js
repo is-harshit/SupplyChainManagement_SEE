@@ -11,9 +11,12 @@ async function main() {
     provider
   );
 
-  const abi = fs.readFileSync("./PeopleProfile_sol_PeopleProfile.abi", "utf8");
+  const abi = fs.readFileSync(
+    "./Bank_sol_Bank.abi",
+    "utf8"
+  );
   const binary = fs.readFileSync(
-    "./PeopleProfile_sol_PeopleProfile.bin",
+    "./Bank_sol_Bank.bin",
     "utf8"
   );
 
@@ -24,22 +27,6 @@ async function main() {
   console.log(contract);
   console.log("Contract deployed! 🥂🥂");
   console.log("Contract deployed at address: " + contract.address);
-
-  const oldage = await contract.retrieve();
-  console.log(
-    "Cuurent Retrieved age from the contract is: " + parseInt(oldage._hex, 16)
-  );
-
-  await contract.store(19);
-
-  console.log("Age Stored in the contract");
-  const newage = await contract.retrieve();
-
-  console.log(
-    "Retrieved age from the contract is: " + parseInt(newage._hex, 16)
-  );
-  console.log("Harshit Agarwal");
-  console.log("1RVU22CSE063");
 }
 
 main()
