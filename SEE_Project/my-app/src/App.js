@@ -9,7 +9,7 @@ import "./App.css";
 
 function App() {
   // const [owner, setOwner] = useState("");
-  const owner = "0x098ebe4832Dc94241d859680E6C98c708593c7e1";
+  let owner = "0x098ebe4832Dc94241d859680E6C98c708593c7e1";
   const [currentAccount, setCurrentAccount] = useState("");
   const [contract, setContract] = useState(null);
   const [bankContract, setBankContract] = useState(null);
@@ -22,6 +22,7 @@ function App() {
 
   const [error, SetError] = useState(false);
   const [errormsg, setErrormsg] = useState(false);
+  const [IllegalError, SetIllegalError] = useState(false);
 
   const buyPricePerstockFromBank = 2;
   const sellPricePerstockFromBank = buyPricePerstockFromBank / 2;
@@ -49,6 +50,7 @@ function App() {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
+
       if (accounts.length !== 0) {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
@@ -133,27 +135,55 @@ function App() {
     if (InvestAmount > 0) {
       let amount = etherify(InvestAmount);
       console.log("Invest Called: " + InvestAmount);
-      let tx = await contract.Invest(InvestAmount, {
-        value: InvestAmount.toString(),
-      });
-      await tx.wait();
+      try {
+        let tx = await contract.Invest(InvestAmount, {
+          value: InvestAmount.toString(),
+        });
+        await tx.wait();
+      } catch (e) {
+        console.log(e);
+        if (e.toString().includes(" rejected transaction")) {
+          SetError(true);
+          setErrormsg("the transaction is rejected");
+        }
+      }
     }
   };
 
   const PurchaseStockFromBank = async () => {
     SetError(false);
-    
+
     console.log("Amount to purchase: " + PurchaseBank);
+    // console.log(PurchaseBank * buyPricePerstockFromBank);
+    currentFunds();
     if (PurchaseBank > 0) {
-      let tx = await contract.PurchaseStockFromBank(PurchaseBank);
-      await tx.wait();
+      if (PurchaseBank * buyPricePerstockFromBank > funds) {
+        SetError(true);
+        setErrormsg("the company doesn't have Sufficient Funds");
+      } else {
+        try {
+          let tx = await contract.PurchaseStockFromBank(PurchaseBank);
+          await tx.wait();
+
+          let price = PurchaseBank * buyPricePerstockFromBank;
+
+          console.log("Price to transfer to bank: " + price);
+          try {
+            tx = await bankContract.deposit(price, { value: price.toString() });
+          } catch (error) {
+            console.log(error);
+            SetIllegalError(true);
+          }
+          Stockinventory();
+        } catch (e) {
+          console.log(e);
+          if (e.toString().includes(" rejected transaction")) {
+            SetError(true);
+            setErrormsg("the transaction is rejected");
+          }
+        }
+      }
     }
-
-    let price = PurchaseBank * buyPricePerstockFromBank;
-
-    console.log("Price to transfer to bank: " + price);
-
-    let tx = await bankContract.deposit(price, { value: price.toString() });
   };
 
   const BuyStockFromCompany = async () => {
@@ -161,14 +191,23 @@ function App() {
     if (price > 0) {
       console.log("Bill: " + price);
 
-      try {
-        let tx = await contract.BuyStockFromCompany(BuyStock, {
-          value: price.toString(),
-        });
+      if (BuyStock > Stocks) {
+        SetError(true);
+        setErrormsg("the company doesn't have sufficient stock");
+      } else {
+        try {
+          let tx = await contract.BuyStockFromCompany(BuyStock, {
+            value: price.toString(),
+          });
 
-        console.log("Transaction successful:", tx);
-      } catch (error) {
-        console.error("Transaction failed:", error);
+          console.log("Transaction successful:", tx);
+        } catch (e) {
+          console.error("Transaction failed:", error);
+          if (e.toString().includes(" rejected transaction")) {
+            SetError(true);
+            setErrormsg("the transaction is rejected");
+          }
+        }
       }
     }
   };
@@ -202,102 +241,109 @@ function App() {
       await tx.wait();
 
       WithdrawAll();
+      Stockinventory();
     }
   };
 
   return (
     <div className="App">
-      <header className="App-header">
-        {error && (
-          <div className="Error Message">
-            Error: Can't complete this transaction as {errormsg}
-          </div>
-        )}
-
-        <br></br>
-        {currentAccount ? (
-          <>
-            <div>Connected Account: {currentAccount}</div>
-            <br></br>
-            <div className="Invest">
-              <button onClick={Invest}>Invest for the Company</button>
-              <input
-                type="number"
-                value={InvestAmount}
-                onChange={(e) => setInvestAmount(e.target.value)}
-                placeholder="Amount to Invest"
-              />
+      {IllegalError ? (
+        <div className="Error Message1">
+          Stock Buying Cancelled as transaction was rejected by the user
+        </div>
+      ) : (
+        <header className="App-header">
+          {error && (
+            <div className="Error Message">
+              Error: Can't complete this transaction as {errormsg}
             </div>
+          )}
 
-            <br></br>
+          <br></br>
+          {currentAccount ? (
+            <>
+              <div>Connected Account: {currentAccount}</div>
+              <br></br>
+              <div className="Invest">
+                <button onClick={Invest}>Invest for the Company</button>
+                <input
+                  type="number"
+                  value={InvestAmount}
+                  onChange={(e) => setInvestAmount(e.target.value)}
+                  placeholder="Amount to Invest"
+                />
+              </div>
 
-            <div className="Funds">
-              <button onClick={currentFunds}>Get Current Funds</button>
-              {funds !== 0 ? (
-                <div>Funds: {funds}</div>
-              ) : (
-                <div>Company out of Funds</div>
-              )}
-            </div>
+              <br></br>
 
-            <div className="PurchaseStocks">
-              <button onClick={PurchaseStockFromBank}>
-                Buy Stock for the Company from Bank
-              </button>
-              <input
-                type="number"
-                value={PurchaseBank}
-                onChange={(e) => setPurchaseBank(e.target.value)}
-                placeholder="Amount to purchase"
-              />
-            </div>
+              <div className="Funds">
+                <button onClick={currentFunds}>Get Current Funds</button>
+                {funds !== 0 ? (
+                  <div>Funds: {funds}</div>
+                ) : (
+                  <div>Company out of Funds</div>
+                )}
+              </div>
 
-            <div className="Stocks">
-              <button onClick={Stockinventory}>Get Current Stock</button>
-              {Stocks !== 0 ? (
-                <div>Stocks: {Stocks}</div>
-              ) : (
-                <div>Company out of Stock</div>
-              )}
-            </div>
+              <div className="PurchaseStocks">
+                <button onClick={PurchaseStockFromBank}>
+                  Buy Stock for the Company from Bank
+                </button>
+                <input
+                  type="number"
+                  value={PurchaseBank}
+                  onChange={(e) => setPurchaseBank(e.target.value)}
+                  placeholder="Amount to purchase"
+                />
+              </div>
 
-            <div className="BuyStocks">
-              <button onClick={BuyStockFromCompany}>
-                Buy Stock from the Company
-              </button>
-              <input
-                type="number"
-                value={BuyStock}
-                onChange={(e) => setBuyStock(e.target.value)}
-                placeholder="Amount of Stock to buy"
-              />
-            </div>
+              <div className="Stocks">
+                <button onClick={Stockinventory}>Get Current Stock</button>
+                {Stocks !== 0 ? (
+                  <div>Stocks: {Stocks}</div>
+                ) : (
+                  <div>Company out of Stock</div>
+                )}
+              </div>
 
-            <div className="transferOwner">
-              <button onClick={transferOwnerShip}>
-                Sell Company to a new owner
-              </button>
-              <input
-                value={newowner}
-                onChange={(e) => setnewowner(e.target.value)}
-                placeholder="Address of the new owner"
-              />
-            </div>
+              <div className="BuyStocks">
+                <button onClick={BuyStockFromCompany}>
+                  Buy Stock from the Company
+                </button>
+                <input
+                  type="number"
+                  value={BuyStock}
+                  onChange={(e) => setBuyStock(e.target.value)}
+                  placeholder="Amount of Stock to buy"
+                />
+              </div>
 
-            <div className="SellAll">
-              <button onClick={SellAllStocks}>
-                Sell All Stocks to Bank for 50% price and Withdraw all funds
-              </button>
-            </div>
+              <div className="transferOwner">
+                <button onClick={transferOwnerShip}>
+                  Sell Company to a new owner
+                </button>
+                <input
+                  value={newowner}
+                  onChange={(e) => setnewowner(e.target.value)}
+                  placeholder="Address of the new owner"
+                />
+              </div>
 
-            {/* <div className="WithdrawAll">
+              <div className="SellAll">
+                <button onClick={SellAllStocks}>
+                  Sell All Stocks to Bank for 50% price and Withdraw all funds
+                </button>
+              </div>
+
+              {/* <div className="WithdrawAll">
               <button onClick={WithdrawAll}>Withdraw All funds</button>
             </div> */}
-          </>
-        ) : (
-          <button onClick={connect}>Connect Wallet</button>
-        )}
-      </header>
+            </>
+          ) : (
+            <button onClick={connect}>Connect Wallet</button>
+          )}
+        </header>
+      )}
     </div>
   );
 }
