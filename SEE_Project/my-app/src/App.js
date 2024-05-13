@@ -140,6 +140,7 @@ function App() {
           value: InvestAmount.toString(),
         });
         await tx.wait();
+        currentFunds();
       } catch (e) {
         console.log(e);
         if (e.toString().includes(" rejected transaction")) {
@@ -263,7 +264,6 @@ function App() {
         });
         await tx.wait();
 
-        WithdrawAll();
         Stockinventory();
         currentFunds();
       }
@@ -278,6 +278,7 @@ function App() {
         setErrormsg("the transaction is rejected");
       }
     }
+    WithdrawAll();
   };
 
   return (
