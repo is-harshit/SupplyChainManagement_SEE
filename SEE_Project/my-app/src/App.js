@@ -14,9 +14,9 @@ function App() {
   const [contract, setContract] = useState(null);
   const [bankContract, setBankContract] = useState(null);
   const [InvestAmount, setInvestAmount] = useState(0);
-  const [funds, setFunds] = useState(0);
+  const [funds, setFunds] = useState(null);
   const [PurchaseBank, setPurchaseBank] = useState(0);
-  const [Stocks, setStocks] = useState(0);
+  const [Stocks, setStocks] = useState(null);
   const [BuyStock, setBuyStock] = useState(0);
   const [newowner, setnewowner] = useState("");
 
@@ -175,6 +175,7 @@ function App() {
             SetIllegalError(true);
           }
           Stockinventory();
+          currentFunds();
         } catch (e) {
           console.log(e);
           if (e.toString().includes(" rejected transaction")) {
@@ -187,6 +188,7 @@ function App() {
   };
 
   const BuyStockFromCompany = async () => {
+    SetError(false);
     const price = CompanySellPrice * BuyStock;
     if (price > 0) {
       console.log("Bill: " + price);
@@ -201,6 +203,8 @@ function App() {
           });
 
           console.log("Transaction successful:", tx);
+          Stockinventory();
+          currentFunds();
         } catch (e) {
           console.error("Transaction failed:", error);
           if (e.toString().includes(" rejected transaction")) {
@@ -213,35 +217,66 @@ function App() {
   };
 
   const WithdrawAll = async () => {
-    let tx = await contract.WithdrawAll();
-    await tx.wait();
+    SetError(false);
+    try {
+      let tx = await contract.WithdrawAll();
+      await tx.wait();
+    } catch (e) {
+      if (e.toString().includes(" rejected transaction")) {
+        SetError(true);
+        setErrormsg("the transaction is rejected");
+      }
+    }
   };
 
   const transferOwnerShip = async () => {
-    let tx = await contract.transferOwnerShip(newowner);
-    owner = newowner;
-    await tx.wait();
+    SetError(false);
+    try {
+      let tx = await contract.transferOwnerShip(newowner);
+      owner = newowner;
+      await tx.wait();
+    } catch (e) {
+      console.log(e);
+      if (e.toString().includes("Not the Owner")) {
+        SetError(true);
+        setErrormsg("you are not the owner");
+      }
+    }
   };
 
   const SellAllStocks = async () => {
-    Stockinventory();
-    let price = await contract.sellPricePerstockFromBank();
-    price = parseInt(price._hex, 16);
-
-    let ret = price * Stocks;
-    console.log("Price to Recieve from Bank " + ret);
-
-    if (ret > 0) {
-      let tx = await contract.SellAllStocks();
-
-      console.log("Stocks sold");
-      tx = await bankContract.BuyStock(ret, owner, {
-        value: ret.toString(),
-      });
-      await tx.wait();
-
-      WithdrawAll();
+    SetError(false);
+    try {
       Stockinventory();
+      let price = await contract.sellPricePerstockFromBank();
+      price = parseInt(price._hex, 16);
+
+      let ret = price * Stocks;
+      console.log("Price to Recieve from Bank " + ret);
+
+      if (ret > 0) {
+        let tx = await contract.SellAllStocks();
+
+        console.log("Stocks sold");
+        tx = await bankContract.BuyStock(ret, owner, {
+          value: ret.toString(),
+        });
+        await tx.wait();
+
+        WithdrawAll();
+        Stockinventory();
+        currentFunds();
+      }
+    } catch (e) {
+      console.log(e);
+      if (e.toString().includes("Not the Owner")) {
+        SetError(true);
+        setErrormsg("you are not the owner");
+      }
+      if (e.toString().includes("rejected transaction")) {
+        SetError(true);
+        setErrormsg("the transaction is rejected");
+      }
     }
   };
 
@@ -265,7 +300,7 @@ function App() {
               <div>Connected Account: {currentAccount}</div>
               <br></br>
               <div className="Invest">
-                <button onClick={Invest}>Invest for the Company</button>
+                <button onClick={Invest}>Fund for the Company</button>
                 <input
                   type="number"
                   value={InvestAmount}
@@ -279,7 +314,11 @@ function App() {
               <div className="Funds">
                 <button onClick={currentFunds}>Get Current Funds</button>
                 {funds !== 0 ? (
-                  <div>Funds: {funds}</div>
+                  funds != null ? (
+                    <div>Funds: {funds}</div>
+                  ) : (
+                    <div></div>
+                  )
                 ) : (
                   <div>Company out of Funds</div>
                 )}
@@ -300,7 +339,11 @@ function App() {
               <div className="Stocks">
                 <button onClick={Stockinventory}>Get Current Stock</button>
                 {Stocks !== 0 ? (
-                  <div>Stocks: {Stocks}</div>
+                  Stocks !== null ? (
+                    <div>Stocks: {Stocks}</div>
+                  ) : (
+                    <div></div>
+                  )
                 ) : (
                   <div>Company out of Stock</div>
                 )}
